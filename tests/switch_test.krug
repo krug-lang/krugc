@@ -1,0 +1,10 @@
+func main() void {
+    switch x {
+	case 0:
+		return;
+	case 1:
+		pass;
+	case 0, 1, 2, 3, 4:
+		break;
+	}
+}

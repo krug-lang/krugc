@@ -1,0 +1,31 @@
+trait SomeTrait {
+	func thisIsntAllowed();
+	func butThisIs();
+}
+
+struct PersonData {
+	last_name string,
+	middleName string,
+}
+
+struct Person {
+	name string,
+	age int,
+	data *PersonData,
+}
+
+impl EmptyImpl {}
+
+impl Person {
+	func leak(data *PersonData) {
+
+	}
+
+	func do_stuff() {
+
+	}
+}
+
+func init_person(person *Person) void {
+	let this_is_constant = 123;
+}

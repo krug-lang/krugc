@@ -1,0 +1,12 @@
+func main() void {
+    if x {
+		let y = 3;
+	} 
+	else {
+
+	} else if 1 {
+
+	} else {
+
+	}
+}

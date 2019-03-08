@@ -1,3 +1,11 @@
-int main() {
-    printf("hello world!");
+func main() int {
+	let x int = 3;
+	let y int = 4;
+	loop {
+		
+	}
+	if x == 3 && y == 4 {
+		return 2;
+	}
+	return 0;
 }

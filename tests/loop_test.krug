@@ -1,0 +1,13 @@
+func main() void {
+	loop {
+	
+    }
+	while x == y {
+
+	}
+
+	mut i = 0;
+	while i < 10; i++ {
+
+	}
+}
