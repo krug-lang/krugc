@@ -1,27 +1,4 @@
-struct bazzle {
-	p Person,
-}
-
-impl bazzle {
-	
-}
-
-impl bazzle {
-	func say_hi(goof gooby, goofa ^goofer) void {
-		mut p Person;
-	}
-}
-
-struct Person {
-	age int,
-	bar bazzle,
-}
-
-func apple(c bear, g ^pasta) foopie {
-	
-}
-
-func main() foopa {
-	mut p Person;
+func main() int {
+	printf("hello world!\n");
 	return 0;
 }

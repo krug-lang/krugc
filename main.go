@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -36,7 +37,7 @@ func randString(n int) string {
 	return string(b)
 }
 
-func postRequest(route string, data interface{}) ([]byte, []api.CompilerError) {
+func (cf *compilerFrontend) postRequest(route string, data interface{}) ([]byte, []api.CompilerError) {
 	// first we encode the data with gob
 	mCache := new(bytes.Buffer)
 	encCache := gob.NewEncoder(mCache)
@@ -52,8 +53,11 @@ func postRequest(route string, data interface{}) ([]byte, []api.CompilerError) {
 	}
 	buff := bytes.NewBuffer(jsonData)
 
+	reqPath := fmt.Sprintf("http://%s%s", cf.server, route)
+	fmt.Printf("> '%s'\n", reqPath)
+
 	client := http.Client{}
-	request, err := http.NewRequest("POST", fmt.Sprintf("http://127.0.0.1:8080%s", route), buff)
+	request, err := http.NewRequest("POST", reqPath, buff)
 	if err != nil {
 		panic(err)
 	}
@@ -72,6 +76,7 @@ func postRequest(route string, data interface{}) ([]byte, []api.CompilerError) {
 
 type compilerFrontend struct {
 	errors []api.CompilerError
+	server string
 }
 
 // reportErrors will report all of the given errors. will return
@@ -89,10 +94,14 @@ func (cf *compilerFrontend) reportErrors(errors []api.CompilerError) bool {
 }
 
 func main() {
+	server := flag.String("server", "127.0.0.1:8080", "the krug-caas ip:port, e.g. 127.0.0.1:8080")
+	flag.Parse()
+
 	startTime := time.Now()
 
 	cf := compilerFrontend{
 		[]api.CompilerError{},
+		*server,
 	}
 
 	filePaths := []string{}
@@ -108,7 +117,7 @@ func main() {
 
 		// LEXICAL ANALYSIS
 
-		tokensRaw, errs := postRequest("/front/lex", compUnit)
+		tokensRaw, errs := cf.postRequest("/front/lex", compUnit)
 		if cf.reportErrors(errs) {
 			return
 		}
@@ -126,7 +135,7 @@ func main() {
 
 		// RECURSIVE DESCENT PARSE
 
-		parseTreeRaw, errs := postRequest("/front/parse", &stream)
+		parseTreeRaw, errs := cf.postRequest("/front/parse", &stream)
 		if cf.reportErrors(errs) {
 			return
 		}
@@ -142,7 +151,7 @@ func main() {
 
 	// BUILD IR
 
-	irModuleRaw, errs := postRequest("/ir/build", trees)
+	irModuleRaw, errs := cf.postRequest("/ir/build", trees)
 	if cf.reportErrors(errs) {
 		return
 	}
@@ -156,7 +165,7 @@ func main() {
 
 	// SEMANTIC ANALYSIS OF IR
 
-	typeResolveRespRaw, errs := postRequest("/mid/type_resolve", irMod)
+	typeResolveRespRaw, errs := cf.postRequest("/mid/type_resolve", irMod)
 	if cf.reportErrors(errs) {
 		return
 	}
@@ -171,7 +180,7 @@ func main() {
 		return
 	}
 
-	resp, errs := postRequest("/back/gen", irMod)
+	resp, errs := cf.postRequest("/back/gen", irMod)
 	if cf.reportErrors(errs) {
 		return
 	}
