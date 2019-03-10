@@ -161,16 +161,12 @@ func main() {
 	if err := ptDecoder.Decode(&irMod); err != nil {
 		panic(err)
 	}
-	fmt.Println(irMod)
 
 	// SEMANTIC ANALYSIS OF IR
 
-	typeResolveRespRaw, errs := cf.postRequest("/mid/type_resolve", irMod)
-	if cf.reportErrors(errs) {
+	if _, errs := cf.postRequest("/mid/type_resolve", irMod); cf.reportErrors(errs) {
 		return
 	}
-
-	fmt.Println(string(typeResolveRespRaw))
 
 	// GENERATE CODE FOR IR.
 
