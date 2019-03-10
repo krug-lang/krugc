@@ -94,7 +94,7 @@ func (cf *compilerFrontend) reportErrors(errors []api.CompilerError) bool {
 }
 
 func main() {
-	server := flag.String("server", "127.0.0.1:8080", "the krug-caas ip:port, e.g. 127.0.0.1:8080")
+	server := flag.String("server", "127.0.0.1:8001", "the krug-caas ip:port, e.g. 127.0.0.1:8001")
 	flag.Parse()
 
 	startTime := time.Now()
