@@ -1,0 +1,80 @@
+/*
+
+	parsing todo list:
+	- dot.operator.access = foo.bar;
+	- address of operator.
+	- next/break statement (in loops)
+		loop {
+			if 1 == 2 {
+				break;
+			}
+			next;
+		}
+	- casting (foo as int)
+	- bitwise operators
+	- function calls
+	- lambdas?
+	- variadic arguments
+	- eval? 
+		let x = eval { 
+			let a = 3; 
+			let b = 2; 
+			yield a + b;
+		}
+	- defer
+
+*/
+
+struct Person {
+	age int,
+	x int,
+	y int,
+	p ^Person,
+}
+
+impl Person {
+	func new() ^Person {
+		return make!Person;
+	}
+
+	func say_hello() void {
+		printf("hello im person");
+	}
+}
+
+func foo(a int, b int) int {
+	return a + b;
+}
+
+/*
+	comments baby
+	/* nested comments */
+*/
+
+// todo list:
+
+func say_hello(val int) void {
+	printf("hello world %d!\n", val);
+}
+
+// fixme:
+// while i < 10; { ... } 
+// casues an error.
+
+func main() int {
+	mut x Person;
+	x.say_hello();	
+
+	mut i int = 0;
+	while i < 10; i += 1 {
+		say_hello(i);
+	}
+
+	loop {
+		say_hello(i);
+		i += 2;
+		if i == 70 {
+			return i;
+		}
+	}
+}

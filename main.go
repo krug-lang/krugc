@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"net/http"
 	"os"
@@ -14,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/krug-lang/ir"
 	"github.com/krug-lang/krugc-api/api"
 	"github.com/krug-lang/krugc-api/front"
+	"github.com/krug-lang/krugc-api/ir"
 )
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -37,7 +36,7 @@ func randString(n int) string {
 	return string(b)
 }
 
-func postRequest(route string, data interface{}) ([]byte, error) {
+func postRequest(route string, data interface{}) ([]byte, []api.CompilerError) {
 	// first we encode the data with gob
 	mCache := new(bytes.Buffer)
 	encCache := gob.NewEncoder(mCache)
@@ -49,29 +48,52 @@ func postRequest(route string, data interface{}) ([]byte, error) {
 	}
 	jsonData, err := json.Marshal(&krugReq)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 	buff := bytes.NewBuffer(jsonData)
 
 	client := http.Client{}
 	request, err := http.NewRequest("POST", fmt.Sprintf("http://127.0.0.1:8080%s", route), buff)
 	if err != nil {
-		log.Fatalln(err)
+		panic(err)
 	}
+
 	resp, err := client.Do(request)
 	if err != nil {
-		log.Fatalln(err)
+		panic(err)
 	}
 
 	var krugResp api.KrugResponse
 	if err := json.NewDecoder(resp.Body).Decode(&krugResp); err != nil {
 		panic(err)
 	}
-	return krugResp.Data, nil
+	return krugResp.Data, krugResp.Errors
+}
+
+type compilerFrontend struct {
+	errors []api.CompilerError
+}
+
+// reportErrors will report all of the given errors. will return
+// if the compiler can continue or not.
+func (cf *compilerFrontend) reportErrors(errors []api.CompilerError) bool {
+	hasFatal := false
+	for _, err := range errors {
+		if err.Fatal {
+			hasFatal = true
+		}
+		fmt.Println(err.Title)
+	}
+	cf.errors = append(cf.errors, errors...)
+	return hasFatal
 }
 
 func main() {
 	startTime := time.Now()
+
+	cf := compilerFrontend{
+		[]api.CompilerError{},
+	}
 
 	filePaths := []string{}
 	for _, arg := range os.Args[1:] {
@@ -86,14 +108,14 @@ func main() {
 
 		// LEXICAL ANALYSIS
 
-		tokensRaw, err := postRequest("/front/lex", compUnit)
-		if err != nil {
-			panic(err)
+		tokensRaw, errs := postRequest("/front/lex", compUnit)
+		if cf.reportErrors(errs) {
+			return
 		}
 
 		var stream front.TokenStream
 		tsDecoder := gob.NewDecoder(bytes.NewBuffer(tokensRaw))
-		if tsDecoder.Decode(&stream); err != nil {
+		if err := tsDecoder.Decode(&stream); err != nil {
 			panic(err)
 		}
 
@@ -104,9 +126,9 @@ func main() {
 
 		// RECURSIVE DESCENT PARSE
 
-		parseTreeRaw, err := postRequest("/front/parse", &stream)
-		if err != nil {
-			panic(err)
+		parseTreeRaw, errs := postRequest("/front/parse", &stream)
+		if cf.reportErrors(errs) {
+			return
 		}
 
 		var resp front.ParseTree
@@ -120,9 +142,9 @@ func main() {
 
 	// BUILD IR
 
-	irModuleRaw, err := postRequest("/ir/build", trees)
-	if err != nil {
-		panic(err)
+	irModuleRaw, errs := postRequest("/ir/build", trees)
+	if cf.reportErrors(errs) {
+		return
 	}
 
 	var irMod ir.Module
@@ -132,11 +154,26 @@ func main() {
 	}
 	fmt.Println(irMod)
 
+	// SEMANTIC ANALYSIS OF IR
+
+	typeResolveRespRaw, errs := postRequest("/mid/type_resolve", irMod)
+	if cf.reportErrors(errs) {
+		return
+	}
+
+	fmt.Println(string(typeResolveRespRaw))
+
 	// GENERATE CODE FOR IR.
 
-	resp, err := postRequest("/back/gen", irMod)
-	if err != nil {
-		panic(err)
+	// if we have reported any errors, dont bother
+	// trying to generate code.
+	if len(cf.errors) != 0 {
+		return
+	}
+
+	resp, errs := postRequest("/back/gen", irMod)
+	if cf.reportErrors(errs) {
+		return
 	}
 
 	fmt.Println(string(resp))
