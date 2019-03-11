@@ -102,8 +102,11 @@ func (cf *compilerFrontend) writeError(err api.CompilerError) {
 		// we will want to be told in the CompilerError
 		// what file this error ocurred in so we can look it up correctly.
 		for _, file := range cf.sourceFiles {
+			line, underline := file.GetLine(fst, snd)
+
 			fmt.Println()
-			fmt.Printf(" |>    %s\n", file.GetLine(fst, snd))
+			fmt.Printf(" |>    %s\n", line)
+			fmt.Printf(" |>    %s\n", underline)
 			fmt.Println()
 		}
 	}
