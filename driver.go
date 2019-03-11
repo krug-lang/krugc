@@ -170,6 +170,11 @@ func main() {
 
 	// GENERATE CODE FOR IR.
 
+	// for now disable code gen.
+	if 1 == 1 {
+		return
+	}
+
 	// if we have reported any errors, dont bother
 	// trying to generate code.
 	if len(cf.errors) != 0 {
