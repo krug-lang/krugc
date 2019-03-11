@@ -1,27 +1,47 @@
-struct bazzle {
-	p Person,
+func say_Hello() void {
 }
 
-impl bazzle {
+func main() int {
+	let x int = 3;
 	
-}
+	// case 1.
+	if y == z {
 
-impl bazzle {
-	func say_hi(goof gooby, goofa ^goofer) void {
-		mut p Person;
+		// case 2.
+		return o;
 	}
-}
-
-struct Person {
-	age int,
-	bar bazzle,
-}
-
-func apple(c bear, g ^pasta) foopie {
 	
-}
+	// case 3.
+	say_hi();
+	
+	say_Hello();
 
-func main() foopa {
-	mut p Person;
+	// case 4.
+	let j rune = a;
+
+	// case 5.
+	while foo < 10; foo += bar {
+
+		// case 6.
+		bar = 9;
+	}
+
+	let z int = 69;
+	{
+		// OK
+		let x int = z;
+		{
+			let g int = 123;
+			{
+				let e int = 9;
+			}
+
+			// case 7.
+			let fo = e;
+		}
+		// case 8.
+		let b int = g;
+	}
+
 	return 0;
 }

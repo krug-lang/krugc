@@ -1,0 +1,27 @@
+func main() int {
+	mut p [int; 12332423452345];
+
+	mut i int = 0;
+	while i < 128; i += 1 {
+		p[i] = 5;
+		printf("%d is %d\n", i, p[i]);
+	}
+
+	mut x int = 0;
+	loop {
+		if x != 3 {
+			next;
+		}
+		printf("%d is 3\n", x);
+		break;
+	}
+
+	if 1 == 2 && 2 == 3 {
+		mut j int = 0;
+		while j > 0; j -= 1 {
+			printf("j is %d\n", j);
+		}
+	}
+
+	return 0;
+}

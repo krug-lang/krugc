@@ -19,8 +19,6 @@ import (
 	"github.com/krug-lang/krugc-api/ir"
 )
 
-const GenerateCode = false
-
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const (
 	letterIdxBits = 6                    // 6 bits to represent a letter index
@@ -40,6 +38,8 @@ func randString(n int) string {
 }
 
 func (cf *compilerFrontend) postRequest(route string, data interface{}) ([]byte, []api.CompilerError) {
+	startTime := time.Now()
+
 	// first we encode the data with gob
 	mCache := new(bytes.Buffer)
 	encCache := gob.NewEncoder(mCache)
@@ -56,7 +56,6 @@ func (cf *compilerFrontend) postRequest(route string, data interface{}) ([]byte,
 	buff := bytes.NewBuffer(jsonData)
 
 	reqPath := fmt.Sprintf("http://%s%s", cf.server, route)
-	fmt.Printf("> '%s'\n", reqPath)
 
 	client := http.Client{}
 	request, err := http.NewRequest("POST", reqPath, buff)
@@ -73,6 +72,9 @@ func (cf *compilerFrontend) postRequest(route string, data interface{}) ([]byte,
 	if err := json.NewDecoder(resp.Body).Decode(&krugResp); err != nil {
 		panic(err)
 	}
+
+	elapsedTime := time.Now().Sub(startTime)
+	fmt.Printf("> %-45s %v\n", reqPath, elapsedTime)
 	return krugResp.Data, krugResp.Errors
 }
 
@@ -97,6 +99,9 @@ func (cf *compilerFrontend) reportErrors(errors []api.CompilerError) bool {
 
 func main() {
 	server := flag.String("server", "127.0.0.1:8001", "the krug-caas ip:port, e.g. 127.0.0.1:8001")
+	codeGen := flag.Bool("gen", false, "when present, krug will generate code")
+	dumpTokens := flag.Bool("dumptokens", false, "when present, the tokens will be dumped to stdout")
+
 	flag.Parse()
 
 	startTime := time.Now()
@@ -130,9 +135,11 @@ func main() {
 			panic(err)
 		}
 
-		// dump tokens, debug for now.
-		for _, tok := range stream.Tokens {
-			fmt.Println(tok)
+		if *dumpTokens {
+			// dump tokens, debug for now.
+			for _, tok := range stream.Tokens {
+				fmt.Println(tok)
+			}
 		}
 
 		// RECURSIVE DESCENT PARSE
@@ -166,15 +173,38 @@ func main() {
 
 	// SEMANTIC ANALYSIS OF IR
 
-	if _, errs := cf.postRequest("/mid/type_resolve", irMod); cf.reportErrors(errs) {
+	// BUILD SCOPE
+
+	scopedIrModuleRaw, errs := cf.postRequest("/mid/build_scope", irMod)
+	if cf.reportErrors(errs) {
 		return
+	}
+
+	var scopedIrMod ir.Module
+	bsDecoder := gob.NewDecoder(bytes.NewBuffer(scopedIrModuleRaw))
+	if err := bsDecoder.Decode(&scopedIrMod); err != nil {
+		panic(err)
+	}
+
+	// PASSES.
+
+	semaPassRoutes := []string{
+		"type",
+		"symbol",
+	}
+
+	for _, route := range semaPassRoutes {
+		_, errs := cf.postRequest(fmt.Sprintf("/mid/resolve/%s", route), scopedIrMod)
+		if cf.reportErrors(errs) {
+			return
+		}
 	}
 
 	// GENERATE CODE FOR IR.
 
 	// if we have reported any errors, dont bother
 	// trying to generate code.
-	if len(cf.errors) == 0 && GenerateCode {
+	if len(cf.errors) == 0 && *codeGen {
 		resp, errs := cf.postRequest("/back/gen", irMod)
 		if cf.reportErrors(errs) {
 			return
@@ -201,5 +231,6 @@ func main() {
 	}
 
 	elapsed := time.Now().Sub(startTime)
-	fmt.Println("Compilation took", elapsed)
+
+	fmt.Printf("\n> %-45s %v\n", "total compilation time", elapsed)
 }
