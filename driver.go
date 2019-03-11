@@ -19,6 +19,8 @@ import (
 	"github.com/krug-lang/krugc-api/ir"
 )
 
+const GenerateCode = false
+
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const (
 	letterIdxBits = 6                    // 6 bits to represent a letter index
@@ -170,39 +172,32 @@ func main() {
 
 	// GENERATE CODE FOR IR.
 
-	// for now disable code gen.
-	if 1 == 1 {
-		return
-	}
-
 	// if we have reported any errors, dont bother
 	// trying to generate code.
-	if len(cf.errors) != 0 {
-		return
-	}
+	if len(cf.errors) == 0 && GenerateCode {
+		resp, errs := cf.postRequest("/back/gen", irMod)
+		if cf.reportErrors(errs) {
+			return
+		}
 
-	resp, errs := cf.postRequest("/back/gen", irMod)
-	if cf.reportErrors(errs) {
-		return
-	}
+		fmt.Println(string(resp))
 
-	fmt.Println(string(resp))
-
-	fileName := fmt.Sprintf("krug_main_%s.c", randString(16))
-	if err := ioutil.WriteFile(fileName, resp, 0644); err != nil {
-		panic(err)
-	}
-	defer func() {
-		if err := os.Remove(fileName); err != nil {
+		fileName := fmt.Sprintf("krug_main_%s.c", randString(16))
+		if err := ioutil.WriteFile(fileName, resp, 0644); err != nil {
 			panic(err)
 		}
-	}()
+		defer func() {
+			if err := os.Remove(fileName); err != nil {
+				panic(err)
+			}
+		}()
 
-	cmd := exec.Command("clang", fileName)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		panic(err)
+		cmd := exec.Command("clang", fileName)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			panic(err)
+		}
 	}
 
 	elapsed := time.Now().Sub(startTime)
