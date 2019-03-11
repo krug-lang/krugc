@@ -10,7 +10,6 @@ struct Person {
 
 impl Person {
 	func foo() void {
-
 	}
 }
 
@@ -35,6 +34,7 @@ func main() int {
 
 	let x = 2;
 	let y = 9;
+
 	if x == 3 {
 		let x = 9;
 	} else if y == 3 {

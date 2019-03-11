@@ -17,7 +17,7 @@ func main() int {
 	say_Hello();
 
 	// case 4.
-	let j rune = a;
+	let j rune = 1232;
 
 	// case 5.
 	while foo < 10; foo += bar {
@@ -29,7 +29,7 @@ func main() int {
 	let z int = 69;
 	{
 		// OK
-		let x int = z;
+		let x int = 1;
 		{
 			let g int = 123;
 			{
@@ -37,10 +37,10 @@ func main() int {
 			}
 
 			// case 7.
-			let fo = e;
+			let fo = 2;
 		}
 		// case 8.
-		let b int = g;
+		let b int = 5;
 	}
 
 	return 0;

@@ -81,18 +81,47 @@ func (cf *compilerFrontend) postRequest(route string, data interface{}) ([]byte,
 type compilerFrontend struct {
 	errors []api.CompilerError
 	server string
+
+	// TODO this should be a hashmap
+	// and the errors should tell us what file
+	// from the hashmap it's from
+	sourceFiles map[string]front.KrugCompilationUnit
+}
+
+func (cf *compilerFrontend) writeError(err api.CompilerError) {
+	fmt.Println(err.Title)
+
+	// if we have some code points, extract the given code smaples
+	codePoints := err.CodeContext
+	for i := 0; i < len(codePoints); i += 2 {
+		fst, snd := codePoints[i], codePoints[i+1]
+
+		// this is a hack, fixme
+		// there is only one file sothis loop will only
+		// iterate once. when we add multiple files
+		// we will want to be told in the CompilerError
+		// what file this error ocurred in so we can look it up correctly.
+		for _, file := range cf.sourceFiles {
+			fmt.Println()
+			fmt.Printf(" |>    %s\n", file.GetLine(fst, snd))
+			fmt.Println()
+		}
+	}
 }
 
 // reportErrors will report all of the given errors. will return
 // if the compiler can continue or not.
 func (cf *compilerFrontend) reportErrors(errors []api.CompilerError) bool {
 	hasFatal := false
+
 	for _, err := range errors {
 		if err.Fatal {
 			hasFatal = true
 		}
-		fmt.Println(err.Title)
+
+		cf.writeError(err)
 	}
+
 	cf.errors = append(cf.errors, errors...)
 	return hasFatal
 }
@@ -109,6 +138,7 @@ func main() {
 	cf := compilerFrontend{
 		[]api.CompilerError{},
 		*server,
+		map[string]front.KrugCompilationUnit{},
 	}
 
 	filePaths := []string{}
@@ -121,6 +151,7 @@ func main() {
 	trees := []front.ParseTree{}
 	for _, filePath := range filePaths {
 		compUnit := front.ReadCompUnit(filePath)
+		cf.sourceFiles[filePath] = compUnit
 
 		// LEXICAL ANALYSIS
 
