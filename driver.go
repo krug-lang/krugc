@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/krug-lang/krugc-api/api"
-	"github.com/krug-lang/krugc-api/front"
-	"github.com/krug-lang/krugc-api/ir"
+	"github.com/krug-lang/server/api"
+	"github.com/krug-lang/server/front"
+	"github.com/krug-lang/server/ir"
 )
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -199,7 +199,7 @@ func main() {
 		return
 	}
 
-	var irMod ir.Module
+	var irMod *ir.Module
 	ptDecoder := gob.NewDecoder(bytes.NewBuffer(irModuleRaw))
 	if err := ptDecoder.Decode(&irMod); err != nil {
 		panic(err)
@@ -209,26 +209,53 @@ func main() {
 
 	// BUILD SCOPE
 
-	scopedIrModuleRaw, errs := cf.postRequest("/mid/build_scope", irMod)
+	scopeMapRaw, errs := cf.postRequest("/mid/build/scope", irMod)
 	if cf.reportErrors(errs) {
 		return
 	}
 
-	var scopedIrMod ir.Module
-	bsDecoder := gob.NewDecoder(bytes.NewBuffer(scopedIrModuleRaw))
-	if err := bsDecoder.Decode(&scopedIrMod); err != nil {
+	var scopeMap *ir.ScopeMap
+	bsDecoder := gob.NewDecoder(bytes.NewBuffer(scopeMapRaw))
+	if err := bsDecoder.Decode(&scopeMap); err != nil {
 		panic(err)
 	}
+	fmt.Println("scope map", scopeMap)
 
-	// PASSES.
+	// BUILD TYPE DECL
+
+	// (scope_map, module) -> [build_type] -> type_map
+	typeMapRaw, errs := cf.postRequest("/mid/build/type", struct {
+		ScopeMap *ir.ScopeMap
+		Module   *ir.Module
+	}{
+		scopeMap,
+		irMod,
+	})
+	if cf.reportErrors(errs) {
+		return
+	}
+
+	var typeMap *ir.TypeMap
+	tmDecoder := gob.NewDecoder(bytes.NewBuffer(typeMapRaw))
+	if err := tmDecoder.Decode(&typeMap); err != nil {
+		panic(err)
+	}
+	fmt.Println("type map", typeMap)
+
+	// RESOLVE PASSES.
 
 	semaPassRoutes := []string{
 		"type",
 		"symbol",
 	}
 
+	// all the sema passes take in a 'semantic module'
+	// as input. they are immutable passes, i.e. they do
+	// not produce and output and do not mutate the input.
+
 	for _, route := range semaPassRoutes {
-		_, errs := cf.postRequest(fmt.Sprintf("/mid/resolve/%s", route), scopedIrMod)
+		semanticMod := ir.NewSemanticModule(scopeMap, typeMap, irMod)
+		_, errs := cf.postRequest(fmt.Sprintf("/mid/resolve/%s", route), semanticMod)
 		if cf.reportErrors(errs) {
 			return
 		}

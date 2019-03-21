@@ -11,12 +11,6 @@ struct Person {
 
 func main() int {
 	let amy Person;
-
-	amy.age;
-	amy.data.num_friends;
-
-	// identifier is going to be either a:
-	// - structure
-
+	
 	return 0;
 }
