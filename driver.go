@@ -219,7 +219,9 @@ func main() {
 	if err := bsDecoder.Decode(&scopeMap); err != nil {
 		panic(err)
 	}
-	fmt.Println("scope map", scopeMap)
+
+	fmt.Println(scopeMap.Functions)
+	fmt.Println(scopeMap.Structures)
 
 	// BUILD TYPE DECL
 
@@ -245,8 +247,8 @@ func main() {
 	// RESOLVE PASSES.
 
 	semaPassRoutes := []string{
-		"type",
-		"symbol",
+		// "type",
+		// "symbol",
 	}
 
 	// all the sema passes take in a 'semantic module'
