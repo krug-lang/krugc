@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/krug-lang/server/api"
-	"github.com/krug-lang/server/front"
-	"github.com/krug-lang/server/ir"
+	"github.com/hugobrains/krug-serv/api"
+	"github.com/hugobrains/krug-serv/front"
+	"github.com/hugobrains/krug-serv/ir"
 )
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
