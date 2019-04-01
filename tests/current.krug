@@ -10,7 +10,8 @@ struct Person {
 }
 
 func main() int {
-	let amy Person;
-	
+	let p Person;
+	let g int;
+	let f int;
 	return 0;
 }
